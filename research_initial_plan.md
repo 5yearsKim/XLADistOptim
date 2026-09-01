@@ -24,7 +24,7 @@ After understanding this region, the work can expand to:
 Dot_1 -> ReduceScatter -> RMSNorm -> AllGather/reshard -> Dot_2
 ```
 
-The intended final target is TPU/XLA, most likely TPU7x (Ironwood). An eight-NVIDIA-GPU environment will be
+The intended final target is TPU/XLA, most likely TPU7x (Ironwood). A three-NVIDIA-GPU environment will be
 used first to develop the methodology, compiler tooling, cost model, and
 distributed experiments. TPU hardware will later be required for calibration
 and final TPU-specific performance claims.
@@ -84,7 +84,7 @@ Candidate decisions may include:
 - `dot`, `reduce-scatter`, `all-gather`, and an elementwise operation.
 - Tile-level producer/communication/consumer pipelines.
 - Makespan and peak-memory optimization.
-- Eight-GPU experiments followed by TPU validation.
+- Three-GPU experiments followed by TPU validation.
 
 ### Deferred until the basic region works
 
@@ -186,6 +186,20 @@ lifetime, and a peak-memory constraint.
 
 ## 7. Phase B: understand stock XLA behavior on GPU
 
+### Current GPU environment
+
+- Three GPUs will be used: GPU IDs 4, 5, and 6 (the fifth through seventh
+  physical GPUs).
+- Each is an NVIDIA RTX PRO 6000 Blackwell Server Edition with approximately
+  96 GiB of memory and CUDA compute capability 12.0.
+- The GPUs use PCIe rather than NVLink. GPUs 4 and 5 share the closest PCIe path
+  (`PIX`); paths from either GPU to GPU 6 are less local (`NODE`).
+- All three GPUs are associated with NUMA node 3 (CPU affinity
+  `72-95,216-239`).
+- The host has two Intel Xeon 6960P sockets, 144 physical CPU cores, and
+  approximately 1.5 TiB of system memory.
+- Observed software baseline: NVIDIA driver 580.173.02 and CUDA toolkit 12.9.
+
 ### Environment record
 
 Record the following with every experiment:
@@ -199,7 +213,7 @@ Record the following with every experiment:
 ### Tasks
 
 1. Implement the initial region in JAX.
-2. Run it on a two-device mesh before scaling to all eight GPUs.
+2. Run it on a two-device mesh before scaling to all three selected GPUs.
 3. Dump StableHLO and HLO before and after SPMD partitioning.
 4. Annotate why each collective was inserted.
 5. Determine whether collectives become asynchronous.
@@ -409,9 +423,7 @@ particular tile size is optimal and why both smaller and larger tiles lose.
 These questions do not block Phase A, but should be resolved before GPU
 experiments are finalized:
 
-1. What NVIDIA GPU model and interconnect topology are available?
-2. Are all eight GPUs in one host?
-3. Which exact Ironwood slice topology, host count, allocation mechanism, and
+1. Which exact Ironwood slice topology, host count, allocation mechanism, and
    usage budget will be available?
-4. Can experiments reserve a stable topology long enough for reproducible
+2. Can experiments reserve a stable topology long enough for reproducible
    measurements?
