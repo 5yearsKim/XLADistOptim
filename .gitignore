@@ -1,5 +1,10 @@
 .venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.ruff_cache/
 .env
 profiles/
+# Default repository-local output from `python main.py --dump-hlo`.
+hlo_dumps/
+measurements/
